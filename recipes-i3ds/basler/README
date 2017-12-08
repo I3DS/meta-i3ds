@@ -1,0 +1,8 @@
+This directory contains recepies for Basler Pylon5 SDK.
+
+This software is proprietary and must be downloaded from the Basler webpage.
+After downloading from the Basler webpage (version 5.0.11 for ARM 64-bit tested),
+run the extractor script to install the files:
+
+./extract-sdk.sh /path/to/pylon-5.0.X-arm64.tar.gz
+
