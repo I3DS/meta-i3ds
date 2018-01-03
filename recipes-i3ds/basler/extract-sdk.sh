@@ -18,7 +18,7 @@ else
     exit -1
 fi
 
-echo -n "Importing Basler Pylon SDK from $FILE..."
+echo -n "Extracting Basler Pylon SDK from $FILE..."
 
 # Create and jump into files directory
 mkdir -p files
