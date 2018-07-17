@@ -1,7 +1,8 @@
 DESCRIPTION = "I3DS-framework"
 LICENSE = "CLOSED"
 
-DEPENDS = "zeromq boost"
+DEPENDS = "zeromq boost cppzmq"
+
 
 inherit pkgconfig cmake
 
