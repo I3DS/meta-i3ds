@@ -2,13 +2,13 @@
 
 SUMMARY = "Pleora eBUS SDK 5.0"
 SECTION = "PETALINUX/apps"
-LICENSE = "Proprietary"
-LIC_FILES_CHKSUM = "file://share/doc/third_party_licenses/NOTICE.txt;md5=b7b40bf71d2647bfc5f2d6eb61f84c82"
+LICENSE = "CLOSED"
 
 SRC_URI = "file://${PN}-${PV}.tar.gz"
 
 S = "${WORKDIR}/ebus-sdk"
 
+EBUS_BIN = "${bindir}/ebus"
 EBUS_LIB = "${libdir}/ebus"
 EBUS_INC = "${includedir}/ebus"
 
@@ -23,6 +23,10 @@ do_install () {
 	# Install needed headers
 	install -d ${D}${EBUS_INC}
 	cp -ra --no-preserve=ownership -t ${D}${EBUS_INC} ${S}/include/*
+
+	# Install needed binaries
+	install -d ${D}${EBUS_BIN}
+	cp -ra --no-preserve=ownership -t ${D}${EBUS_BIN} ${S}/bin/*
 }
 
 FILES_${PN} += " ${EBUS_LIB}/*"
