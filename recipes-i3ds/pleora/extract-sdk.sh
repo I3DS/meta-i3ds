@@ -32,6 +32,14 @@ dpkg -x $FILE tmp/
 mv tmp/opt/pleora/ebus_sdk/linux-aarch64-arm/ files/ebus-sdk
 rm -rf tmp/
 
+# This unused file has a reference to bin/bash which causes warnings during build
+rm files/ebus-sdk/bin/install_daemon.sh
+
+# Copy the licenses into the directory
+mkdir -p files/ebus-sdk/lib/licenses
+cp -r licenses/* files/ebus-sdk/lib/licenses
+
+# Pack and gzip the files
 cd files/
 tar czf ebus-sdk-5.0.tar.gz ebus-sdk
 rm -rf ebus-sdk
