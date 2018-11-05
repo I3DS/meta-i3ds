@@ -9,9 +9,10 @@
 #include <fcntl.h>
 #include <string.h>
 
+#include <i3ds/time.hpp>
+#include <i3ds/imu_sensor.hpp>
 #include <i3ds/communication.hpp>
 #include <i3ds/publisher.hpp>
-#include <i3ds/periodic.hpp>
 
 #define BUFFER_SIZE 4096
 
@@ -26,10 +27,10 @@
 #define HEADER_SIZE  16
 #define DATA_SIZE    (PAYLOAD_SIZE - HEADER_SIZE)
 
-typedef struct _payload {	
+typedef struct _payload {
 	uint32_t address;
 	uint32_t offset;
-	uint32_t total;	
+	uint32_t total;
 	uint32_t size;
 	uint8_t  data[DATA_SIZE];
 } payload_t;
@@ -44,12 +45,12 @@ int remote_read(uint32_t address)
 	int bytes_sent, bytes_read;
 	int more = 1;
 
-	bzero(buffer, BUFFER_SIZE);		
+	bzero(buffer, BUFFER_SIZE);
 
 	while (more) {
 
-	  //printf("Sending address %X\r\n", address);
-	  
+		//printf("Sending address %X\r\n", address);
+
 		bytes_sent = write(fd, &address, sizeof(uint32_t));
 
 		if (bytes_sent != sizeof(uint32_t)) {
@@ -59,7 +60,7 @@ int remote_read(uint32_t address)
 
 		//printf("Reading address %X\r\n", address);
 
-		bytes_read = read(fd, payload, PAYLOAD_SIZE); 
+		bytes_read = read(fd, payload, PAYLOAD_SIZE);
 
 		if (bytes_read != PAYLOAD_SIZE) {
 			perror("Failed to read data");
@@ -80,7 +81,7 @@ int remote_read(uint32_t address)
 
 		memcpy(buffer + payload->offset, payload->data, payload->size);
 		more = payload->size + payload->offset < payload->total;
-	}	
+	}
 
 	return payload->offset;
 }
@@ -94,25 +95,12 @@ int main(int argc, char *argv[])
 	std::string rpmsg_dev = "/dev/rpmsg0";
 
 	i3ds::Context::Ptr context = i3ds::Context::Create();
+
 	// TODO: make dynamic and nice
 	NodeID node = 310;
-	EndpointID endpoint = 128;
 
-	i3ds::Address address(node, endpoint);
-	i3ds::Socket::Ptr socket = i3ds::Socket::Publisher(context);
-	socket->Attach(address.node);
+	i3ds::Publisher publisher(context, node);
 
-	while ((opt = getopt(argc, argv, "d:")) != -1) {
-		switch (opt) {
-		case 'd':
-			rpmsg_dev = optarg;
-			break;
-		default:
-			printf("getopt return unsupported option: -%c\n",opt);
-			break;
-		}
-	}
-	
 	printf("\r\n I3DS R5 IMU bridge \r\n");
 	printf("\r\n Open rpmsg dev! \r\n");
 
@@ -136,31 +124,43 @@ int main(int argc, char *argv[])
 		perror("Failed allocate buffer.");
 		return -1;
 	}
-	
-	uint32_t address_id = (address.node << 8) + address.endpoint;
+
+	uint32_t address_id = (node << 8) + i3ds::IMU::MeasurementTopic::endpoint;
 
 	while (running) {
+
+		IMUMeasurement20 measurement;
+
 		size = remote_read(address_id);
 
-		if (size < 0) {
-		  break;
+		if (size < 0 || (size % sizeof(IMUSample))) {
+			printf("Error reading %d", size);
+			break;
 		}
 
 		if (size == 0) {
 		  continue;
 		}
 
-		i3ds::Message message;
-		message.set_address(address);
-		message.append_payload(buffer, size);
+		const int n = size / sizeof(IMUSample);
 
-		printf("Sendt to node %llu, endpoint %llu, size %lu bytes, payloads: %d\n",
-		       message.node(), message.endpoint(), message.size(0), message.payloads());
-		socket->Send(message);
+		printf("Got %d samples", n);
+
+		IMUMeasurement20_Initialize(&measurement);
+
+		measurement.attributes.timestamp = i3ds::get_timestamp();
+		measurement.attributes.validity = sample_valid;
+
+		measurement.batch_size = n;
+		measurement.samples.nCount = n;
+
+		memcpy(measurement.samples.arr, buffer, size);
+
+		publisher.Send<i3ds::IMU::MeasurementTopic>(measurement);
 	}
 
 	close(fd);
-	
+
 	printf("\r\n Quitting application .. \r\n");
 	printf(" I3DS R5 IMU bridge end \r\n");
 
