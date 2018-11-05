@@ -3,21 +3,19 @@ SUMMARY = "I3DS R5 bridge for IMU"
 LICENSE = "BSD"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=b30cbe0b980e98bfd9759b1e6ba3d107"
 
+DEPENDS = "rpmsg-user-module\
+	   i3ds-framework"
+
+EXTRA_OECMAKE += '-DBUILD_EMBEDDED=OFF -DGENERATE_ASN=OFF'
+
+inherit pkgconfig cmake
+
 SRC_URI = "\
 	file://LICENSE \
-	file://Makefile \
-	file://i3ds_r5_imu.c \
+	file://CMakeLists.txt \
+	file://i3ds_r5_imu.cpp \
 	"
 
 S = "${WORKDIR}"
 
-DEPENDS = "rpmsg-user-module"
-
-FILES_${PN} = "\
-	/usr/bin/i3ds_r5_imu \
-"
-
-do_install () {
-	install -d ${D}/usr/bin
-	install -m 0755 i3ds_r5_imu ${D}/usr/bin/i3ds_r5_imu
-}
+BBCLASSEXTEND = "native"

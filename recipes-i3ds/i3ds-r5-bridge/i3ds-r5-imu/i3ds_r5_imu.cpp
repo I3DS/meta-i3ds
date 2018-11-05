@@ -1,3 +1,5 @@
+#include <string>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -7,7 +9,11 @@
 #include <fcntl.h>
 #include <string.h>
 
-#define BUFFER_SIZE 4000
+#include <i3ds/communication.hpp>
+#include <i3ds/publisher.hpp>
+#include <i3ds/periodic.hpp>
+
+#define BUFFER_SIZE 4096
 
 #define RPMSG_GET_KFIFO_SIZE 1
 #define RPMSG_GET_AVAIL_DATA_SIZE 2
@@ -36,14 +42,13 @@ static payload_t *payload;
 int remote_read(uint32_t address)
 {
 	int bytes_sent, bytes_read;
-	int offset = 0;
 	int more = 1;
 
 	bzero(buffer, BUFFER_SIZE);		
 
 	while (more) {
 
-		printf("Sending address %X\r\n", address);
+	  //printf("Sending address %X\r\n", address);
 	  
 		bytes_sent = write(fd, &address, sizeof(uint32_t));
 
@@ -52,7 +57,7 @@ int remote_read(uint32_t address)
 			return -1;
 		}
 
-		printf("Reading address %X\r\n", address);
+		//printf("Reading address %X\r\n", address);
 
 		bytes_read = read(fd, payload, PAYLOAD_SIZE); 
 
@@ -61,32 +66,23 @@ int remote_read(uint32_t address)
 			return -1;
 		}
 
-		printf("Got %d bytes\r\n", bytes_read);
+		//printf("Got %d bytes\r\n", bytes_read);
 
 		if (payload->total > BUFFER_SIZE) {
 			printf("Insufficient buffer size");
 			return -1;
 		}
 
-		if (offset + payload->size > payload->total) {
+		if (payload->offset + payload->size > payload->total) {
 			printf("Payload size vs total mismatch");
 			return -1;
 		}
 
-		printf("Payload offset %d, %d bytes total, size %d bytes\r\n",
-		       payload->offset,
-		       payload->total,
-		       payload->size);
-		
-		for (int i = 0; i < payload->size; i++) {
-			buffer[offset + i] = payload->data[i];
-		}
-
-		offset += payload->size;
-		more = offset < payload->total;
+		memcpy(buffer + payload->offset, payload->data, payload->size);
+		more = payload->size + payload->offset < payload->total;
 	}	
 
-	return offset;
+	return payload->offset;
 }
 
 int main(int argc, char *argv[])
@@ -95,11 +91,17 @@ int main(int argc, char *argv[])
 	int opt;
 	int size;
 
-	char *rpmsg_dev = "/dev/rpmsg0";
+	std::string rpmsg_dev = "/dev/rpmsg0";
 
-	// TODO: Add meaningful address.
-	uint32_t address = 400;
-	
+	i3ds::Context::Ptr context = i3ds::Context::Create();
+	// TODO: make dynamic and nice
+	NodeID node = 310;
+	EndpointID endpoint = 128;
+
+	i3ds::Address address(node, endpoint);
+	i3ds::Socket::Ptr socket = i3ds::Socket::Publisher(context);
+	socket->Attach(address.node);
+
 	while ((opt = getopt(argc, argv, "d:")) != -1) {
 		switch (opt) {
 		case 'd':
@@ -114,7 +116,7 @@ int main(int argc, char *argv[])
 	printf("\r\n I3DS R5 IMU bridge \r\n");
 	printf("\r\n Open rpmsg dev! \r\n");
 
-	fd = open(rpmsg_dev, O_RDWR);
+	fd = open(rpmsg_dev.c_str(), O_RDWR);
 
 	if (fd < 0) {
 		perror("Failed to open rpmsg file /dev/rpmsg0.");
@@ -134,15 +136,27 @@ int main(int argc, char *argv[])
 		perror("Failed allocate buffer.");
 		return -1;
 	}
+	
+	uint32_t address_id = (address.node << 8) + address.endpoint;
 
 	while (running) {
-		size = remote_read(address);
+		size = remote_read(address_id);
 
 		if (size < 0) {
-			break;
+		  break;
 		}
 
-		printf(" read address %X, received %d bytes", address, size);
+		if (size == 0) {
+		  continue;
+		}
+
+		i3ds::Message message;
+		message.set_address(address);
+		message.append_payload(buffer, size);
+
+		printf("Sendt to node %llu, endpoint %llu, size %lu bytes, payloads: %d\n",
+		       message.node(), message.endpoint(), message.size(0), message.payloads());
+		socket->Send(message);
 	}
 
 	close(fd);
