@@ -1,0 +1,106 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:             i3ds-startup
+# Required-Start:       $networking
+# Required-Stop:        
+# Default-Start:        2 3 4 5
+# Default-Stop:         1
+# Short-Description:    Automatic startup script for I3DS
+
+PATH=/sbin:/bin:/usr/bin:/usr/sbin:/usr/local/bin
+. /etc/init.d/functions
+
+function startprog() {
+	 prog=$1
+	 logname=$2
+	 if [ -z "$logname" ]; then
+	    logname=/dev/null
+	 fi
+	 logdir=/var/log/i3ds
+	 logfile="${logdir}/${logname}"
+
+	 echo "Starting $prog"
+	 echo "Logging to $logfile"
+
+	 mkdir -p "${logdir}"
+	 nohup /usr/bin/restarting.sh $prog > $logfile 2>&1 &
+	 
+}
+
+function killprog() {
+	 name=$1
+	 pid=$(ps x | grep i3ds | grep restarting | grep $name | grep -v grep | head -n1 | awk '{ print $1 }')
+	 echo "Killing PID: $pid"
+	 kill $pid
+	 if [ $? -ne 0 ]; then
+	     echo "Could not kill $name restarter"
+	 fi
+	 /bin/usleep 500
+	 pid=$(ps x | grep i3ds | grep -v restarting | grep $name | grep -v grep | head -n1 | awk '{ print $1 }')
+	 echo "Killing PID: $pid"
+	 kill $pid
+	 if [ $? -ne 0 ]; then
+	     echo "Could not kill $name app"
+	 fi
+}
+
+function startdaemon() {
+         echo "Switching power on"
+         i2cset -y 2 0x22 0x8C 0x00
+	 i2cset -y 2 0x22 0x04 0xFF
+
+	 #echo "Waiting for cameras to start"
+	 #sleep 10
+
+         echo "Starting I3DS nodes"    
+	 chmod +x /usr/bin/i3ds_cosine_*
+	 startprog "i3ds_address_server --config /etc/peta_addresses.csv" address_server
+	 startprog "i3ds_sintef_flash --node 298 --device=/dev/ttyS3" flash
+	 startprog "i3ds_power_control --node 299" power_control
+	 startprog "i3ds_trigger --node 300" trigger
+	 startprog "i3ds_cosine_tir -c i3ds-thermal --node 303 --trigger-node 300" cosine_tir
+	 LD_LIBRARY_PATH=/usr/lib/pylon5/ startprog "i3ds_basler_hr -c i3ds-basler-hr --node 305 --trigger-node 300 --trigger-flash-offset 0 --trigger-camera-offset 5000 --trigger-camera-output 5 -p 1500 -d 2000 --flash 1 --flash-node 298 --pattern 1 --trigger-pattern-offset 0" basler_hr
+	 startprog "i3ds_cosine_stereo -c i3ds-stereo --node 304 --trigger-node 300 --trigger-camera-output 1 --flash 1 --flash-node 298 --pattern 1" cosine_stereo
+	 startprog "i3ds_piap_analog --node 306 --type tactile" analog_tactile
+	 startprog "i3ds_piap_analog --node 307 --type ft" analog_ft
+	 startprog "i3ds_piap_analog --node 311 --type thermistor" analog_thermistor
+	 startprog "i3ds_cosine_hr -c i3ds-highres --node 312 --trigger-node 300  --flash 1 --flash-node 298 --pattern 1" cosine_hr
+	 echo "Done."
+}
+function stopdaemon(){
+	 echo "Stopping I3DS nodes"
+	 killprog i3ds_address_server
+	 killprog i3ds_power_control
+	 killprog i3ds_trigger
+	 killprog tir
+	 pid=$(ps x | grep i3ds_cosine_camera | grep tir | awk '{ printf $1 }')
+	 kill $pid
+	 killprog i3ds_basler_hr
+	 killprog stereo
+	 pid=$(ps x | grep i3ds_cosine_camera | grep stereo | awk '{ printf $1 }')
+	 kill $pid
+	 killprog tactile
+	 killprog piap_analog
+	 killprog thermistor
+	 killprog hr
+	 pid=$(ps x | grep i3ds_cosine_camera | grep hr | awk '{ printf $1 }')
+	 kill $pid
+	 echo "Done."
+}
+
+case "$1" in
+  start)
+	startdaemon        
+        
+        ;;
+  stop)
+        stopdaemon
+        ;;
+
+  restart)
+	stopdaemon
+	startdaemon
+	;;
+esac
+
+exit 0

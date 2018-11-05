@@ -1,0 +1,73 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:             i3ds-r5-startup
+# Required-Start:       $networking
+# Required-Stop:        
+# Default-Start:        2 3 4 5
+# Default-Stop:         1
+# Short-Description:    Automatic startup script for I3DS's R5 programs
+
+PATH=/sbin:/bin:/usr/bin:/usr/sbin:/usr/local/bin
+. /etc/init.d/functions
+
+DESCRIPTION="Startup for programs running on and communicating with the R5 cores"
+NAME="i3ds-r5"
+DAEMON="/usr/bin/ebus/eBUSd"
+FIRMWARE_NAME="i3ds_imu_r5.elf"
+REMOTEPROC="/sys/class/remoteproc/remoteproc0"
+
+function killprog() {
+	 name=$1
+	 pid=$(ps x | grep i3ds | grep restarting | grep $name | grep -v grep | head -n1 | awk '{ print $1 }')
+	 echo "Killing PID: $pid"
+	 kill $pid
+	 if [ $? -ne 0 ]; then
+	     echo "Could not kill $name restarter"
+	 fi
+	 /bin/usleep 500
+	 pid=$(ps x | grep i3ds | grep -v restarting | grep $name | grep -v grep | head -n1 | awk '{ print $1 }')
+	 echo "Killing PID: $pid"
+	 kill $pid
+	 if [ $? -ne 0 ]; then
+	     echo "Could not kill $name app"
+	 fi
+}
+
+#
+# Function that starts the daemon/service
+#
+startdaemon()
+{
+    echo $FIRMWARE_NAME > $REMOTEPROC/firmware
+    echo "start" > $REMOTEPROC/state
+    logdir=/var/log/i3ds
+    mkdir -p $logdir
+
+    modprobe rpmsg_user_dev_driver
+    nohup /usr/bin/restarting.sh i3ds_imu_client > $logdir/i3ds_imu_client 2>&1 &
+}
+
+#
+# Function that stops the daemon/service
+#
+stopdaemon()
+{
+    killprog i3ds_imu
+}
+
+case "$1" in
+  start)
+	startdaemon
+
+        ;;
+  stop)
+        stopdaemon
+        ;;
+
+  restart)
+	stopdaemon
+	startdaemon
+	;;
+esac
+
+exit 0
