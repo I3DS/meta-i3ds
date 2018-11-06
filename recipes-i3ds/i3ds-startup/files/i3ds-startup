@@ -64,7 +64,7 @@ function startdaemon() {
 	 startprog "i3ds_piap_analog --node 306 --type tactile" analog_tactile
 	 startprog "i3ds_piap_analog --node 307 --type ft" analog_ft
 	 startprog "i3ds_piap_analog --node 311 --type thermistor" analog_thermistor
-	 startprog "i3ds_cosine_hr -c i3ds-highres --node 312 --trigger-node 300  --flash 1 --flash-node 298 --pattern 1" cosine_hr
+	 startprog "i3ds_cosine_hr -c i3ds-highres --node 312 --trigger-node 300 --trigger-camera-output 5 --flash 1 --flash-node 298 --pattern 1" cosine_hr
 	 echo "Done."
 }
 function stopdaemon(){
