@@ -49,8 +49,6 @@ int remote_read(uint32_t address)
 
 	while (more) {
 
-		//printf("Sending address %X\r\n", address);
-
 		bytes_sent = write(fd, &address, sizeof(uint32_t));
 
 		if (bytes_sent != sizeof(uint32_t)) {
@@ -58,16 +56,12 @@ int remote_read(uint32_t address)
 			return -1;
 		}
 
-		//printf("Reading address %X\r\n", address);
-
 		bytes_read = read(fd, payload, PAYLOAD_SIZE);
 
 		if (bytes_read != PAYLOAD_SIZE) {
 			perror("Failed to read data");
 			return -1;
 		}
-
-		//printf("Got %d bytes\r\n", bytes_read);
 
 		if (payload->total > BUFFER_SIZE) {
 			printf("Insufficient buffer size");
@@ -80,10 +74,11 @@ int remote_read(uint32_t address)
 		}
 
 		memcpy(buffer + payload->offset, payload->data, payload->size);
-		more = payload->size + payload->offset < payload->total;
+
+		more = payload->offset + payload->size < payload->total;
 	}
 
-	return payload->offset;
+	return payload->total;
 }
 
 int main(int argc, char *argv[])
@@ -134,7 +129,7 @@ int main(int argc, char *argv[])
 		size = remote_read(address_id);
 
 		if (size < 0 || (size % sizeof(IMUSample))) {
-			printf("Error reading %d", size);
+			printf("Error reading %d\r\n", size);
 			break;
 		}
 
@@ -143,8 +138,6 @@ int main(int argc, char *argv[])
 		}
 
 		const int n = size / sizeof(IMUSample);
-
-		printf("Got %d samples", n);
 
 		IMUMeasurement20_Initialize(&measurement);
 
