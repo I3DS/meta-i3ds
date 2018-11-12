@@ -97,6 +97,9 @@ int main(int argc, char *argv[])
 	i3ds::Publisher publisher(context, node);
 
 	printf("\r\n I3DS R5 IMU bridge \r\n");
+
+	usleep(1000000);
+
 	printf("\r\n Open rpmsg dev! \r\n");
 
 	fd = open(rpmsg_dev.c_str(), O_RDWR);

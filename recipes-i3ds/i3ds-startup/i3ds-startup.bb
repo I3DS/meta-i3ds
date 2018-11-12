@@ -19,7 +19,6 @@ S = "${WORKDIR}"
 INSANE_SKIP_${PN} = "arch"
 FW_LIB_DIR = "/lib/firmware"
 
-
 do_install() {
      install -d ${D}/etc/
      install -m 0644 peta_addresses.csv ${D}/etc/
