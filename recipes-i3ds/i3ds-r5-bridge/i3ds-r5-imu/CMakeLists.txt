@@ -26,7 +26,6 @@ if (BUILD_EMBEDDED)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --sysroot=${CMAKE_FIND_ROOT_PATH}")
 endif (BUILD_EMBEDDED)
 
-
 find_package (Boost COMPONENTS program_options log REQUIRED)
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
@@ -34,42 +33,16 @@ if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -std=c++11")
 endif()
 
-include_directories (include)
-
-################################################################################
-# ASN.1 generation
-################################################################################
-if (GENERATE_ASN)
-  find_package (ASN1CC REQUIRED)
-
-  if ("${ASN1CC_EXECUTABLE}" STREQUAL "" OR "${ASN1CC_EXECUTABLE}" STREQUAL "ASN1CC_EXECUTABLE-NOTFOUND")
-    MESSAGE(FATAL_ERROR "ASN.1 compiler not found.\n"
-      "Please specify the ASN1CC_SRC_ROOT_FOLDER or set GENERATE_ASN=OFF")
-  endif()
-                 
-  set (DMU30_DIR ${PROJECT_SOURCE_DIR}/asn/i3ds-dmu30-asn)
-  set (ASN1_FILES
-    ${DMU30_DIR}/DMU30.asn
-    )
-
-  set (ASN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/i3ds")
-  asn1cc_generate_c (ASN1_SRCS ASN1_HDRS "${ASN_OUTPUT_DIR}" ${ASN1_FILES})
-  include_directories (BEFORE "${CMAKE_CURRENT_BINARY_DIR}")
-
-else (GENERATE_ASN)
-  include_directories (BEFORE "generated")
-
-  file(GLOB ASN1_SRCS generated/i3ds/*.c)
-  file(GLOB ASN1_HDRS generated/i3ds/*.h)
-
-endif (GENERATE_ASN)
+include_directories (include/)
 
 ################################################################################
 # Add sources and targets
 ################################################################################
+
 set(SRCS
-  ${ASN1_SRCS} ${ASN1_HDRS}
-  src/imu_dmu30.cpp)
+  src/i3ds_r5_imu.cpp
+  src/remoteproc_imu.cpp
+  src/remoteproc_bridge.cpp)
 
 set (LIBS
   zmq
@@ -78,11 +51,7 @@ set (LIBS
   ${Boost_LIBRARIES}
   )
 
-
-add_executable (i3ds_imu i3ds_r5_imu.cpp)
+add_executable (i3ds_imu ${SRCS})
 target_link_libraries (i3ds_imu ${LIBS})
-#TODO: link with ada library instead of dummy
-#target_link_libraries(i3ds_imu ${PROJECT_SOURCE_DIR}/libi3ds-r5.a)
 target_compile_features(i3ds_imu PRIVATE cxx_range_for)
 install(TARGETS i3ds_imu DESTINATION bin)
-

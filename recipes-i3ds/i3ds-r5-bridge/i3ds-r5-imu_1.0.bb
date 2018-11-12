@@ -13,7 +13,11 @@ inherit pkgconfig cmake
 SRC_URI = "\
 	file://LICENSE \
 	file://CMakeLists.txt \
-	file://i3ds_r5_imu.cpp \
+	file://include/remoteproc_imu.hpp \
+	file://include/remoteproc_bridge.hpp \
+	file://src/i3ds_r5_imu.cpp \
+	file://src/remoteproc_imu.cpp \
+	file://src/remoteproc_bridge.cpp \
 	"
 
 S = "${WORKDIR}"

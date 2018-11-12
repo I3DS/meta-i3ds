@@ -43,7 +43,7 @@ startdaemon()
     mkdir -p $logdir
 
     modprobe rpmsg_user_dev_driver
-    nohup /usr/bin/restarting.sh i3ds_imu > $logdir/i3ds_imu 2>&1 &
+    nohup /usr/bin/restarting.sh i3ds_imu --node 310 > $logdir/i3ds_imu 2>&1 &
 }
 
 #
