@@ -1,0 +1,13 @@
+#! /bin/sh
+
+exec i3ds_cosine_stereo \
+     --node 304 \
+     --camera-name i3ds-stereo \
+     --trigger 1 \
+     --trigger-node 300 \
+     --trigger-camera-output 1 \
+     --trigger-camera-offset 15000 \
+     --flash 1 \
+     --flash-node 298 \
+     --trigger-flash-output 8 \
+     --trigger-flash-offset 14950

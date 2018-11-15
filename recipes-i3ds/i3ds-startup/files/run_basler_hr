@@ -1,0 +1,18 @@
+#! /bin/sh
+
+LD_LIBRARY_PATH=/usr/lib/pylon5/ exec i3ds_basler_hr \
+     --node 305 \
+     --camera-name i3ds-basler-hr \
+     --package-size 1500 \
+     --package-delay 2000 \
+     --trigger 1 \
+     --trigger-node 300 \
+     --trigger-camera-output 5 \
+     --trigger-camera-offset 5000 \
+     --flash 1 \
+     --flash-node 298 \
+     --trigger-flash-output 8 \
+     --trigger-flash-offset 4950 \
+     --pattern 1 \
+     --trigger-pattern-output 6 \
+     --trigger-pattern-offset 0

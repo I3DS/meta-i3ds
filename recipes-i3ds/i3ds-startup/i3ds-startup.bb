@@ -9,6 +9,17 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda
 
 SRC_URI = "file://i3ds-startup \
 	   file://restarting.sh \
+	   file://run_address_server \
+	   file://run_analog_ft \
+	   file://run_analog_tactile \
+	   file://run_analog_thermistor \
+	   file://run_basler_hr \
+	   file://run_cosine_hr \
+	   file://run_cosine_stereo \
+	   file://run_cosine_tir \
+	   file://run_power_control \
+	   file://run_sintef_flash \
+	   file://run_trigger \
 	   file://peta_addresses.csv \
 	   file://ebusd \
 	   file://i3ds-r5-startup \
@@ -25,6 +36,17 @@ do_install() {
 
      install -d ${D}/usr/bin/
      install -m 0755 restarting.sh ${D}/usr/bin/
+     install -m 0755 run_address_server ${D}/usr/bin
+     install -m 0755 run_analog_ft ${D}/usr/bin
+     install -m 0755 run_analog_tactile ${D}/usr/bin
+     install -m 0755 run_analog_thermistor ${D}/usr/bin
+     install -m 0755 run_basler_hr ${D}/usr/bin
+     install -m 0755 run_cosine_hr ${D}/usr/bin
+     install -m 0755 run_cosine_stereo ${D}/usr/bin
+     install -m 0755 run_cosine_tir ${D}/usr/bin
+     install -m 0755 run_power_control ${D}/usr/bin
+     install -m 0755 run_sintef_flash ${D}/usr/bin
+     install -m 0755 run_trigger ${D}/usr/bin
 
      install -d ${D}/etc/init.d/
      install -m 0755 i3ds-startup ${D}/etc/init.d/

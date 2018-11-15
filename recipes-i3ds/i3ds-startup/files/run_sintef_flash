@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec i3ds_sintef_flash --node 298 --device=/dev/ttyS3

@@ -1,0 +1,9 @@
+#! /bin/sh
+
+exec i3ds_cosine_tir \
+     --node 303 \
+     --camera-name i3ds-thermal \
+     --trigger 1 \
+     --trigger-node 300 \
+     --trigger-camera-output 2 \
+     --trigger-camera-offset 0

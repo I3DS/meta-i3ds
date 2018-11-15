@@ -1,0 +1,3 @@
+#! /bin/sh
+
+exec i3ds_address_server --config /etc/peta_addresses.csv

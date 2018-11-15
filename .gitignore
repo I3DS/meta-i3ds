@@ -1,3 +1,4 @@
 *~
-recipes-i3ds/*/files
-
+recipes-i3ds/basler/files
+recipes-i3ds/pleora/files
+build_petalinux/
